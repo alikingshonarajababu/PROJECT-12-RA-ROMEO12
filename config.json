@@ -13,16 +13,16 @@
     "eventDisabled": [],
     "autoClean": true,
     "ACCESSTOKEN": "",
-    "BOTNAME": "Muskan",
-    "AMDIN_NAME": "Raza",
-    "FACEBOOK_ADMIN": "https://www.facebook.com/61588112703542",
+    "BOTNAME": "JANU",
+    "AMDIN_NAME": "ALI",
+    "FACEBOOK_ADMIN": "https://www.facebook.com/o.x.o.x.837300",
     "PREFIX": ".",
     "ADMINBOT": [
-        "100065216344877",
+        "61551447140312",
         ""
     ],
     "NDH": [
-        "100065216344877",
+        "61551447140312",
         ""
     ],
     "DATABASE": {
@@ -86,5 +86,5 @@
         "autoUnsend": "",
         "unsendMessageAfter": 5
     },
-    "ADMIN_NAME": "Talha"
+    "ADMIN_NAME": "ALI"
 }
