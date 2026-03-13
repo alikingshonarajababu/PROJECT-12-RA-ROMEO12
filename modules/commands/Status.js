@@ -33,7 +33,7 @@ module.exports.run = async function ({ api, event, args }) {
             `• 𝘀𝘁𝗮𝘁𝘂𝘀 𝗮𝘁𝘁𝗶𝘁𝘂𝗱𝗲\n` +
             `• 𝘀𝘁𝗮𝘁𝘂𝘀 𝗿𝗼𝗺𝗮𝗻𝘁𝗶𝗰\n\n` +
             `━━━━━━━━━━━━━━\n` +
-            `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨`,
+            `✨ 𝗠𝐫 𝐀𝐋𝐈 ✨`,
             event.threadID,
             event.messageID
         );
@@ -50,11 +50,11 @@ module.exports.run = async function ({ api, event, args }) {
     ];
 
     const frames = [
-        `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n🔍 "${query}" status search...\n▰▱▱▱▱▱▱▱▱▱ 10%`,
-        `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n📹 Status mil gaya!\n▰▰▱▱▱▱▱▱▱▱ 25%`,
-        `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n📥 Download...\n▰▰▰▱▱▱▱▱▱▱ 45%`,
-        `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n⚙️ Process...\n▰▰▰▰▱▱▱▱▱▱ 70%`,
-        `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n✅ Ready!\n▰▰▰▰▰▰▰▰▰▱ 95%`
+        `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n🔍 "${query}" status search...\n▰▱▱▱▱▱▱▱▱▱ 10%`,
+        `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n📹 Status mil gaya!\n▰▰▱▱▱▱▱▱▱▱ 25%`,
+        `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n📥 Download...\n▰▰▰▱▱▱▱▱▱▱ 45%`,
+        `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n⚙️ Process...\n▰▰▰▰▱▱▱▱▱▱ 70%`,
+        `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n✅ Ready!\n▰▰▰▰▰▰▰▰▰▱ 95%`
     ];
 
     const statusMsg = await api.sendMessage(frames[0], event.threadID);
@@ -96,7 +96,7 @@ module.exports.run = async function ({ api, event, args }) {
         if (!videos || videos.length === 0) {
             api.unsendMessage(statusMsg.messageID);
             return api.sendMessage(
-                `❌ "${query}" ka koi status nahi mila\n\n✨ Miss Aliya ✨`,
+                `❌ "${query}" ka koi status nahi mila\n\n✨ 𝐌𝐑 𝐀𝐋𝐈 ✨`,
                 event.threadID,
                 event.messageID
             );
@@ -112,7 +112,7 @@ module.exports.run = async function ({ api, event, args }) {
         if (videos.length === 0) {
             api.unsendMessage(statusMsg.messageID);
             return api.sendMessage(
-                `❌ "${query}" ka koi Bollywood/Pakistani status nahi mila\n\n✨ Miss Aliya ✨`,
+                `❌ "${query}" ka koi Bollywood/Pakistani status nahi mila\n\n✨ 𝐌𝐑 𝐀𝐋𝐈 ✨`,
                 event.threadID,
                 event.messageID
             );
@@ -156,7 +156,7 @@ module.exports.run = async function ({ api, event, args }) {
         } catch (fetchError) {
             api.unsendMessage(statusMsg.messageID);
             return api.sendMessage(
-                `❌ Download link nahi mila\n\n✨ Miss Aliya ✨`,
+                `❌ Download link nahi mila\n\n✨ 𝐌𝐑 𝐀𝐋𝐈 ✨`,
                 event.threadID,
                 event.messageID
             );
@@ -165,7 +165,7 @@ module.exports.run = async function ({ api, event, args }) {
         if (!fetchRes.data.status || !fetchRes.data.result || !fetchRes.data.result.mp4) {
             api.unsendMessage(statusMsg.messageID);
             return api.sendMessage(
-                `❌ Download URL nahi mila\n\n✨ Miss Aliya ✨`,
+                `❌ Download URL nahi mila\n\n✨ 𝐌𝐑 𝐀𝐋𝐈 ✨`,
                 event.threadID,
                 event.messageID
             );
@@ -185,7 +185,7 @@ module.exports.run = async function ({ api, event, args }) {
         } catch (downloadError) {
             api.unsendMessage(statusMsg.messageID);
             return api.sendMessage(
-                `❌ Download fail hua\n\n✨ Miss Aliya ✨`,
+                `❌ Download fail hua\n\n✨ 𝐌𝐑 𝐀𝐋𝐈 ✨`,
                 event.threadID,
                 event.messageID
             );
@@ -241,7 +241,7 @@ module.exports.run = async function ({ api, event, args }) {
         await api.sendMessage(
             {
                 body: 
-                    `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨\n\n` +
+                    `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨\n\n` +
                     `━━━━━━━━━━━━━━\n` +
                     `📹 𝗦𝘁𝗮𝘁𝘂𝘀: ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}\n` +
                     `⏱️ 𝗗𝘂𝗿𝗮𝘁𝗶𝗼𝗻: ${trimDuration} 𝘀𝗲𝗰\n` +
@@ -251,7 +251,7 @@ module.exports.run = async function ({ api, event, args }) {
                     `🎯 𝗥𝗲𝗾𝘂𝗲𝘀𝘁: "${query}"\n` +
                     `━━━━━━━━━━━━━━\n` +
                     `${randomResponse}\n` +
-                    `✨ 𝗠𝗶𝘀𝘀 𝗔𝗹𝗶𝘆𝗮 ✨`,
+                    `✨ 𝗠𝐑 𝐀𝐋𝐈 ✨`,
                 attachment: fs.createReadStream(finalVideoPath)
             },
             event.threadID
