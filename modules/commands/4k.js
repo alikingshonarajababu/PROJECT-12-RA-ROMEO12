@@ -1,50 +1,64 @@
-const axios = require("axios");
-const fs = require("fs-extra");
-const path = require("path");
+const axios = require('axios');
+const crypto = require('crypto');
+const fs = require('fs');
 
-module.exports.config = {
-  name: "4k",
-  version: "1.0.0",
-  hasPermssion: 0,
-  credits: "Raza",
-  description: "Enhance image to 4k using Remini API",
-  commandCategory: "Image",
-  usages: "reply to an image with 4k",
-  cooldowns: 5
-};
+async function getBaseApi() {
+    try {
+        const response = await axios.get('https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json');
+        return response.data.mahmud;
+    } catch (e) {
+        return "https://sensui-useless-apis.vercel.app"; // Fallback API link
+    }
+}
 
-module.exports.run = async function ({ api, event }) {
-  const { threadID, messageID, type, messageReply } = event;
+module.exports = {
+    config: {
+        name: "4k",
+        version: "1.0.0",
+        hasPermssion: 0,
+        credits: "𝐒𝐇𝐀𝐀𝐍 𝐊𝐇𝐀𝐍",
+        description: "Enhance image quality using 4K AI",
+        commandCategory: "Image",
+        usages: "4k (reply image / image url)",
+        cooldowns: 10
+    },
 
-  if (type !== "message_reply" || !messageReply.attachments || messageReply.attachments.length == 0 || messageReply.attachments[0].type !== "photo") {
-    return api.sendMessage("❌ Please reply to an image with '4k'", threadID, messageID);
-  }
+    run: async function({ api, event, args }) {
+        const { threadID, messageID, messageReply } = event;
+        let imageUrl = '';
 
-  try {
-    api.sendMessage("⏳ Enhancing image to 4k... please wait.", threadID, messageID);
+        // Check if user replied to an image
+        if (messageReply && messageReply.attachments && messageReply.attachments[0] && messageReply.attachments[0].type === "photo") {
+            imageUrl = messageReply.attachments[0].url;
+        } 
+        // Check if user provided a URL in args
+        else if (args[0]) {
+            imageUrl = args.join(" ");
+        }
 
-    const imageUrl = messageReply.attachments[0].url;
-    const res = await axios.get(`https://api.kraza.qzz.io/imagecreator/remini?url=${encodeURIComponent(imageUrl)}`);
+        if (!imageUrl) {
+            return api.sendMessage("❌ Photo reply karo ya image URL do", threadID, messageID);
+        }
 
-    if (!res.data.status || !res.data.result) return api.sendMessage("❌ Failed to enhance image.", threadID, messageID);
+        const waitMessage = await api.sendMessage("✫꯭🎸꯭≛⃝ALI⎯᪳⤹🌷⤸\x0a⏳ 4K image ban rahi hai…", threadID);
 
-    const resultUrl = res.data.result;
-    const cacheDir = path.join(__dirname, "cache");
-    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-    const outputPath = path.join(cacheDir, `remini_${Date.now()}.jpg`);
+        try {
+            const baseApi = await getBaseApi();
+            const apiUrl = `${baseApi}/api/hd?imgUrl=${encodeURIComponent(imageUrl)}`;
 
-    const imageRes = await axios.get(resultUrl, { responseType: 'arraybuffer' });
-    fs.writeFileSync(outputPath, Buffer.from(imageRes.data));
+            const response = await axios.get(apiUrl, { responseType: "stream" });
 
-    return api.sendMessage({
-      body: "✨ Image enhanced to 4k!",
-      attachment: fs.createReadStream(outputPath)
-    }, threadID, () => {
-      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-    }, messageID);
+            api.unsendMessage(waitMessage.messageID);
 
-  } catch (error) {
-    console.error(error);
-    return api.sendMessage("❌ An error occurred.", threadID, messageID);
-  }
+            return api.sendMessage({
+                body: "✫꯭🎸꯭≛⃝ALI⎯᪳⤹🌷⤸\x0a\x0a✅ Ye lo aapki 4K image 💖",
+                attachment: response.data
+            }, threadID, messageID);
+
+        } catch (error) {
+            console.error(error);
+            api.unsendMessage(waitMessage.messageID);
+            return api.sendMessage("❌ 4K image generate nahi ho payi", threadID, messageID);
+        }
+    }
 };
