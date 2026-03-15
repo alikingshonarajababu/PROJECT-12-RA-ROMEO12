@@ -1,113 +1,145 @@
 module.exports.config = {
-  name: "money",
-  version: "1.0.0",
-  hasPermssion: 0,
-  credits: "𝐊𝐀𝐒𝐇𝐈𝐅 𝐑𝐀𝐙𝐀",
-  description: "Check your money, others' money, or all group members' money",
-  commandCategory: "Earning Money",
-  usages: "money | money all",
-  cooldowns: 0,
-  usePrefix: false,
+    name: "money",
+    version: "1.1.1",
+    hasPermission: 0,
+    credits: "Quất",
+    description: "Set money or check money?",
+    commandCategory: "User",
+    usages: "/money [ + , - , * , / , ++ , -- , +- , +% , -% ]",
+    cooldowns: 0,
+    usePrefix: false,
 };
 
-module.exports.run = async function ({ Currencies, api, event, Users }) {
-  const { threadID, senderID, mentions, type, messageReply, body } = event;
-  let targetID = senderID;
+module.exports.run = async function ({ Currencies, api, event, args, Users, permission }) {
+    const axios = require("axios");
+    const { threadID, messageID, senderID, mentions, type, messageReply } = event;
 
-  if (body.toLowerCase().includes("all")) {
+    let targetID = senderID;
+    if (type === 'message_reply') {
+        targetID = messageReply.senderID;
+    } else if (Object.keys(mentions).length > 0) {
+        targetID = Object.keys(mentions)[0];
+    }
+
+    const name = await Users.getNameUser(targetID);
+    const fetchStream = (url) => axios.get(url, { responseType: "stream" }).then(r => r.data);
+    const gifLink = "https://files.catbox.moe/shxujt.gif";
+
+    const moment = require("moment-timezone");
+    const time = moment.tz("Asia/Karachi").format('HH:mm:ss - DD/MM/YYYY');
+
+    const money = (await Currencies.getData(targetID)).money;
+    const amount = args[1];
+
     try {
-      const threadInfo = await api.getThreadInfo(threadID);
-      const allMembers = threadInfo.participantIDs;
-      let message = `≿━━━━༺❀༻━━━━≾  
+        switch (args[0]) {
+            case "+": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(amount));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money increased by ${amount}$\n💸 Now has ${money + parseInt(amount)}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "-": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(-amount));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money decreased by ${amount}$\n💸 Now has ${money - amount}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "*": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(money * (amount - 1)));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money multiplied by ${amount}\n💸 Now has ${money * amount}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "/": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(-money + (money / amount)));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money divided by ${amount}\n💸 Now has ${money / amount}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "++": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, Infinity);
+                return api.sendMessage({
+                    body: `💸 ${name}'s money set to Infinity\n💸 Now has Infinity$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "--": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.decreaseMoney(targetID, parseInt(money));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money reset\n💸 Now has 0$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "+-": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.decreaseMoney(targetID, parseInt(money));
+                await Currencies.increaseMoney(targetID, parseInt(amount));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money changed to ${amount}$\n💸 Now has ${amount}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "^": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(-money + Math.pow(money, amount)));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money raised to the power of ${amount}\n💸 Now has ${Math.pow(money, amount)}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "√": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(-money + Math.pow(money, 1 / amount)));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money root ${amount}\n💸 Now has ${Math.pow(money, 1 / amount)}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "+%": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(money / (100 / amount)));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money increased by ${amount}%\n💸 Now has ${money + (money / (100 / amount))}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "-%": {
+                if (permission < 2) return api.sendMessage("You don't have permission", threadID);
+                await Currencies.increaseMoney(targetID, parseInt(-(money / (100 / amount))));
+                return api.sendMessage({
+                    body: `💸 ${name}'s money decreased by ${amount}%\n💸 Now has ${money - (money / (100 / amount))}$\n⏰ ${time}`,
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
+            }
+            case "pay": {
+                const senderMoney = (await Currencies.getData(senderID)).money;
+                const bet = amount === 'all' ? senderMoney : amount;
+                if (money < 1) return api.sendMessage({
+                    body: "You have less than $1 or are trying to send more than your balance",
+                    attachment: await fetchStream(gifLink)
+                }, threadID);
 
-💰 Money of group members:  
-
-`;
-
-      let membersMoney = [];
-      for (const memberID of allMembers) {
-        const name = await Users.getNameUser(memberID);
-        const userData = await Currencies.getData(memberID);
-        const money = (userData && typeof userData.money !== 'undefined') ? userData.money : 0;
-        membersMoney.push({ name, money });
-      }
-
-      membersMoney.sort((a, b) => b.money - a.money);
-
-      for (const member of membersMoney) {
-        if (member.money === Infinity) {
-          message += `- ${member.name} has ♾️ Unlimited money\n`;
-        } else {
-          message += `- ${member.name} has ${member.money} VND\n`;
+                await Currencies.increaseMoney(senderID, parseInt(-bet));
+                await Currencies.increaseMoney(targetID, parseInt(bet));
+                return api.sendMessage(`Transferred ${bet}$ to ${name}`, threadID);
+            }
         }
-      }
-
-      message += `\n≿━━━━༺❀༻━━━━≾`;
-
-      return api.sendMessage(message, threadID);
     } catch (e) {
-      console.log(`Error while fetching money of all members:`, e);
-      return api.sendMessage(
-        `⚝──⭒─⭑─⭒──⚝  
-
-❌ An error occurred while fetching group info. Please try again later.  
-
-⚝──⭒─⭑─⭒──⚝`,
-        threadID
-      );
-    }
-  }
-
-  if (type === 'message_reply' && messageReply.senderID) {
-    targetID = messageReply.senderID;
-  } else if (Object.keys(mentions).length > 0) {
-    targetID = Object.keys(mentions)[0];
-  }
-
-  const name = await Users.getNameUser(targetID);
-
-  try {
-    const userData = await Currencies.getData(targetID);
-    if (!userData || typeof userData.money === 'undefined') {
-      return api.sendMessage(
-        `༻﹡﹡﹡﹡﹡﹡﹡༺  
-
-- ${name} has 0 VND  
-
-༻﹡﹡﹡﹡﹡﹡﹡༺`,
-        threadID
-      );
+        console.log(e);
     }
 
-    const money = userData.money;
-    if (money === Infinity) {
-      return api.sendMessage(
-        `༻﹡﹡﹡﹡﹡﹡﹡༺  
-
-- ${name} has ♾️ Unlimited money  
-
-༻﹡﹡﹡﹡﹡﹡﹡༺`,
-        threadID
-      );
-    }
-
-    return api.sendMessage(
-      `༻﹡﹡﹡﹡﹡﹡﹡༺  
-
-- ${name} has ${money} VND  
-
-༻﹡﹡﹡﹡﹡﹡﹡༺`,
-      threadID
-    );
-  } catch (e) {
-    console.log(`Error while fetching money of user ${targetID}:`, e);
-    return api.sendMessage(
-      `≿━━━━༺❀༻━━━━≾  
-
-❌ An error occurred. Please try again later.  
-
-≿━━━━༺❀༻━━━━≾`,
-      threadID
-    );
-  }
+    if (money === Infinity) return api.sendMessage(`${name} has infinite money`, threadID);
+    if (money === null) return api.sendMessage(`${name} has $0`, threadID);
+    if (!args[0] || !args[1]) return api.sendMessage(`${name} has ${money}$`, threadID);
 };

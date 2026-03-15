@@ -1,126 +1,132 @@
-this.config = {
-    name: "menu",
-    version: "1.1.1",
-    hasPermssion: 0,
-    credits: "𝐊𝐀𝐒𝐇𝐈𝐅 𝐑𝐀𝐙𝐀",
-    description: "View command list and info",
-    commandCategory: "Groups",
-    usages: "[command name/all]",
-    cooldowns: 0
+module.exports.config = {
+    name: 'menu',
+    version: '1.1.1',
+    hasPermission: 0,
+    credits: 'KOJA XD',
+    description: 'View list of command groups and command information',
+    commandCategory: 'Chat Box',
+    usages: '[...command name | all]',
+    cooldowns: 5,
+    images: [],
+    envConfig: {
+        autoUnsend: {
+            status: true,
+            timeOut: 60
+        }
+    }
 };
 
-this.languages = {
-    "en": {},
-    "en": {}
-};
+const { autoUnsend = this.config.envConfig.autoUnsend } = global.config == undefined ? {} : global.config.menu == undefined ? {} : global.config.menu;
+const { compareTwoStrings, findBestMatch } = require('string-similarity');
+const { readFileSync, writeFileSync, existsSync } = require('fs-extra');
 
-this.run = async function({ api, event, args }) {
-    const { threadID: tid, messageID: mid, senderID: sid } = event;
-    var type = !args[0] ? "" : args[0].toLowerCase();
-    var msg = "";
-    const cmds = global.client.commands;
-    const TIDdata = global.data.threadData.get(tid) || {};
+module.exports.run = async function ({ api, event, args }) {
+    const axios = require("axios");
     const moment = require("moment-timezone");
+    const { sendMessage: send, unsendMessage: un } = api;
+    const { threadID: tid, messageID: mid, senderID: sid } = event;
+    const cmds = global.client.commands;
 
-    // Set timezone to Asia/Karachi
-    var day = moment.tz('Asia/Karachi').format('dddd');
-    const time = moment.tz("Asia/Karachi").format("hh:mm:ss A | DD/MM/YYYY");
-    const hours = moment.tz("Asia/Karachi").format("hh A");
+    const url = 'https://files.catbox.moe/amblv9.gif';
+    const img = (await axios.get(url, { responseType: "stream" })).data;
+    const time = moment.tz("Asia/Karachi").format("HH:mm:ss || DD/MM/YYYY");
 
-    const admin = config.ADMINBOT;
-    const NameBot = config.BOTNAME;
-    const version = config.version;
-    var prefix = TIDdata.PREFIX || global.config.PREFIX;
-
-    if (type == "all") {
-        const commandsList = Array.from(cmds.values()).map((cmd, index) => {
-            return `${index + 1}. ${cmd.config.name}\n📝 Description: ${cmd.config.description}\n\n`;
-        }).join('');
-        return api.sendMessage(commandsList, tid, mid);
-    }
-
-    if (type) {
-        let command = Array.from(cmds.values()).find(cmd => cmd.config.name.toLowerCase() === type);
-        if (!command) {
-            const stringSimilarity = require('string-similarity');
-            const commandName = args.shift().toLowerCase() || "";
-            const commandValues = cmds['keys']();
-            const checker = stringSimilarity.findBestMatch(commandName, commandValues);
-            if (checker.bestMatch.rating >= 0.5) command = client.commands.get(checker.bestMatch.target);
-            msg = `⚠️ Command '${type}' not found.\n📌 Closest match found: '${checker.bestMatch.target}'`;
-            return api.sendMessage(msg, tid, mid);
-        }
-        const cmd = command.config;
-        msg = `≿━━━━༺❀༻━━━━≾
-
-📜 Command: ${cmd.name}  
-🕹️ Version: ${cmd.version}  
-🔑 Permission: ${TextPr(cmd.hasPermssion)}  
-📝 Description: ${cmd.description}  
-🏘️ Category: ${cmd.commandCategory}  
-📌 Usage: ${cmd.usages}  
-⏳ Cooldowns: ${cmd.cooldowns}s  
-
-≿━━━━༺❀༻━━━━≾`;
-        return api.sendMessage(msg, tid, mid);
-    } else {
-        const commandsArray = Array.from(cmds.values()).map(cmd => cmd.config);
-        const array = [];
-        commandsArray.forEach(cmd => {
-            const { commandCategory, name: nameModule } = cmd;
-            const find = array.find(i => i.cmdCategory == commandCategory);
-            if (!find) {
-                array.push({
-                    cmdCategory: commandCategory,
-                    nameModule: [nameModule]
-                });
+    if (args.length >= 1) {
+        if (typeof cmds.get(args.join(' ')) == 'object') {
+            const body = infoCmds(cmds.get(args.join(' ')).config);
+            return send(body, tid, mid);
+        } else {
+            if (args[0] == 'all') {
+                const data = cmds.values();
+                let txt = '╭─────────────⭓\n', count = 0;
+                for (const cmd of data) txt += `│ ${++count}. ${cmd.config.name} | ${cmd.config.description}\n`;
+                txt += `\n├────────⭔\n│ ⏳ Auto-delete message after: ${autoUnsend.timeOut}s\n╰─────────────⭓`;
+                return send({ body: txt, attachment: img }, tid, (a, b) => autoUnsend.status ? setTimeout(v => un(v), 1000 * autoUnsend.timeOut, b.messageID) : '');
             } else {
-                find.nameModule.push(nameModule);
+                const cmdsValue = cmds.values();
+                const arrayCmds = [];
+                for (const cmd of cmdsValue) arrayCmds.push(cmd.config.name);
+                const similarly = findBestMatch(args.join(' '), arrayCmds);
+                if (similarly.bestMatch.rating >= 0.3) return send(` "${args.join(' ')}" is similar to command "${similarly.bestMatch.target}" ?`, tid, mid);
             }
-        });
-        array.sort(S("nameModule"));
-        array.forEach(cmd => {
-            if (['ADMIN','NO PREFIX'].includes(cmd.cmdCategory.toUpperCase()) && !global.config.ADMINBOT.includes(sid)) return;
-            msg += `⚝──⭒─⭑─⭒──⚝  
-
-[ ${cmd.cmdCategory.toUpperCase()} ]  
-📝 Total Commands: ${cmd.nameModule.length}  
-${cmd.nameModule.join(", ")}  
-
-`;
-        });
-
-        msg += `⚝──⭒─⭑─⭒──⚝  
-
-📝 Total Commands: ${cmds.size}  
-👤 Total Bot Admins: ${admin.length}  
-👾 Bot Name: ${NameBot}  
-🕹️ Version: ${version}  
-📅 Today is: ${day}  
-⏱️ Time: ${time}  
-
-Use: ${prefix}help + command name for details  
-Use: ${prefix}help all to view all commands  
-
-⚝──⭒─⭑─⭒──⚝`;
-
-        return api.sendMessage(msg, tid, mid);
+        }
+    } else {
+        const data = commandsGroup();
+        let txt = '╭─────────────⭓\n', count = 0;
+        for (const { commandCategory, commandsName } of data) txt += `│ ${++count}. ${commandCategory} || has ${commandsName.length} commands\n`;
+        txt += `├────────⭔\n│ 📝 Total: ${global.client.commands.size} commands\n│ ⏰ Time: ${time}\n│ 🔎 Reply with 1 to ${data.length} to select\n│ ⏳ Auto-delete message after: ${autoUnsend.timeOut}s\n╰─────────────⭓`;
+        return send({ body: txt, attachment: img }, tid, (a, b) => {
+            global.client.handleReply.push({ name: this.config.name, messageID: b.messageID, author: sid, 'case': 'infoGr', data });
+            if (autoUnsend.status) setTimeout(v => un(v), 1000 * autoUnsend.timeOut, b.messageID);
+        }, mid);
     }
 };
 
-function S(k) {
-    return function(a, b) {
-        let i = 0;
-        if (a[k].length > b[k].length) {
-            i = 1;
-        } else if (a[k].length < b[k].length) {
-            i = -1;
-        }
-        return i * -1;
+module.exports.handleReply = async function ({ handleReply: $, api, event }) {
+    const { sendMessage: send, unsendMessage: un } = api;
+    const { threadID: tid, messageID: mid, senderID: sid, args } = event;
+    const axios = require("axios");
+    const url = 'https://files.catbox.moe/amblv9.gif';
+    const img = (await axios.get(url, { responseType: "stream" })).data;
+
+    if (sid != $.author) {
+        return send(`⛔ You are not allowed to interact with this`, tid, mid);
     }
+
+    switch ($.case) {
+        case 'infoGr': {
+            let data = $.data[(+args[0]) - 1];
+            if (data == undefined) return send(`❎ "${args[0]}" is not in the menu list`, tid, mid);
+
+            un($.messageID);
+            let txt = `╭─────────────⭓\n│ ${data.commandCategory}\n├─────⭔\n`, count = 0;
+            for (const name of data.commandsName) {
+                const cmdInfo = global.client.commands.get(name).config;
+                txt += `│ ${++count}. ${name} | ${cmdInfo.description}\n`;
+            }
+            txt += `├────────⭔\n│ 🔎 Reply with 1 to ${data.commandsName.length} to select\n│ ⏳ Auto-delete message after: ${autoUnsend.timeOut}s\n│ 📝 Use ${prefix(tid)}help + command name to see usage details\n╰─────────────⭓`;
+            return send({ body: txt, attachment: img }, tid, (a, b) => {
+                global.client.handleReply.push({ name: this.config.name, messageID: b.messageID, author: sid, 'case': 'infoCmds', data: data.commandsName });
+                if (autoUnsend.status) setTimeout(v => un(v), 1000 * autoUnsend.timeOut, b.messageID);
+            });
+        }
+        case 'infoCmds': {
+            let data = global.client.commands.get($.data[(+args[0]) - 1]);
+            if (typeof data != 'object') return send(`⚠️ "${args[0]}" is not in the menu list`, tid, mid);
+
+            const { config = {} } = data || {};
+            un($.messageID);
+            return send(infoCmds(config), tid, mid);
+        }
+    }
+};
+
+function commandsGroup() {
+    const array = [], cmds = global.client.commands.values();
+    for (const cmd of cmds) {
+        const { name, commandCategory } = cmd.config;
+        const find = array.find(i => i.commandCategory == commandCategory);
+        !find ? array.push({ commandCategory, commandsName: [name] }) : find.commandsName.push(name);
+    }
+    array.sort(sortCompare('commandsName'));
+    return array;
 }
 
-function TextPr(permission) {
-    p = permission;
-    return p == 0 ? "Member" : p == 1 ? "Group Admin" : p == 2 ? "Bot Admin" : "Full Permission";
+function infoCmds(a) {
+    return `╭── INFO ────⭓\n│ 📔 Command Name: ${a.name}\n│ 🌴 Version: ${a.version}\n│ 🔐 Permission: ${permissionText(a.hasPermission)}\n│ 👤 Author: ${a.credits}\n│ 🌾 Description: ${a.description}\n│ 📎 Category: ${a.commandCategory}\n│ 📝 Usage: ${a.usages}\n│ ⏳ Cooldown: ${a.cooldowns} seconds\n╰─────────────⭓`;
+}
+
+function permissionText(a) {
+    return a == 0 ? 'Member' : a == 1 ? 'Group Admin' : a == 2 ? 'BOT ADMIN' : 'Bot Operator';
+}
+
+function prefix(a) {
+    const tidData = global.data.threadData.get(a) || {};
+    return tidData.PREFIX || global.config.PREFIX;
+}
+
+function sortCompare(k) {
+    return function (a, b) {
+        return (a[k].length > b[k].length ? 1 : a[k].length < b[k].length ? -1 : 0) * -1;
+    };
 }

@@ -1,147 +1,96 @@
+module.exports = {
+  config: {
+    name: "prefix",
+    version: "1.0.3",
+    hasPermission: 0,
+    credits: "KOJA-PROJECT",
+    description: "Display bot prefix and usage guide",
+    commandCategory: "system",
+    usages: "",
+    cooldowns: 5
+  },
 
-const axios = require("axios");
-const moment = require("moment-timezone");
+  handleEvent: async function({ event, api, prefix }) {
+    const { threadID, messageID, body } = event;
 
-module.exports.config = {
-  name: "prefix",
-  version: "2.0.0",
-  hasPermission: 0,
-  credits: "𝐊𝐀𝐒𝐇𝐈𝐅 𝐑𝐀𝐙𝐀",
-  description: "Check bot prefix",
-  commandCategory: "Member",
-  usages: "[]",
-  cooldowns: 0
-};
+    // Get Karachi time & date
+    const options = {
+      timeZone: 'Asia/Karachi',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    };
+    const formatter = new Intl.DateTimeFormat('en-PK', options);
+    const parts = formatter.formatToParts(new Date());
 
-module.exports.handleEvent = async function ({ api, event, client }) {
-  const { threadID, body, messageID } = event;
-  const { PREFIX } = global.config;
-  const gio = moment.tz("Asia/Karachi").format("HH:mm:ss || DD/MM/YYYY");
+    let time = '', date = '';
+    parts.forEach(part => {
+      if (part.type === 'hour') time = part.value;
+      else if (part.type === 'minute') time += `:${part.value}`;
+      else if (part.type === 'second') time += `:${part.value}`;
+      else if (part.type === 'day') date = part.value;
+      else if (part.type === 'month') date += `/${part.value}`;
+      else if (part.type === 'year') date += `/${part.value}`;
+    });
 
-  let threadSetting = global.data.threadData.get(threadID) || {};
-  let prefix = threadSetting.PREFIX || PREFIX;
+    // Trigger keywords
+    const triggers = [
+      "prefix", "mpre", "mprefix",
+      "command mark", "bot prefix",
+      "what is the prefix", "p r e f i x"
+    ];
 
-  if (
-    body &&
-    (
-      body.toLowerCase() === "prefix" ||
-      body.toLowerCase() === "prefix bot là gì" ||
-      body.toLowerCase() === "quên prefix r" ||
-      body.toLowerCase() === "qlam" ||
-      body.toLowerCase() === "how to use bot" ||
-      body.toLowerCase() === "bot help" ||
-      body.toLowerCase() === "bot usage"
-    )
-  ) {
-    const msg = `====『 𝗣𝗥𝗘𝗙𝗜𝗫 』====\n━━━━━━━━━━━━━━━━\n[➽]→ The box's prefix is: ${prefix}\n[➽]→ The system prefix is: ${global.config.PREFIX}\n[➽]→ Currently the bot has ${client.commands.size} usable commands\n[➽] Total bot users: ${global.data.allUserID.length}\n[➽] Total Groups: ${global.data.allThreadID.length}\n[➽] Now: ${gio}\n[➽]→ React with "❤" to this message to view command list`;
+    const isTriggered = triggers.some(trigger => body.toLowerCase().includes(trigger.toLowerCase()));
 
-    try {
-      const picture = (await axios.get(`https://i.imgur.com/m4ruygS.jpg`, { responseType: "stream" })).data;
-      
-      return api.sendMessage(
-        {
-          body: msg,
-          attachment: picture
-        },
-        threadID,
-        (err, info) => {
-          if (!err) {
-            global.client.handleReaction.push({
-              name: this.config.name,
-              messageID: info.messageID,
-              author: event.senderID,
-            });
-          }
-        },
-        messageID
-      );
-    } catch (error) {
-      // Fallback without image if API fails
-      return api.sendMessage(
-        msg,
-        threadID,
-        (err, info) => {
-          if (!err) {
-            global.client.handleReaction.push({
-              name: this.config.name,
-              messageID: info.messageID,
-              author: event.senderID,
-            });
-          }
-        },
-        messageID
-      );
+    if (isTriggered) {
+      const response = `
+╭──────•◈•──────╮
+| ● 𝗣𝗥𝗘𝗙𝗜𝗫 𝗜𝗡𝗙𝗢 
+╰──────•◈•──────╯
+
+╭┈ ❒ [ • ] 𝗕𝗢𝗧 𝗣𝗥𝗘𝗙𝗜𝗫
+╰┈➤  ${global.config.PREFIX}
+
+╭┈ ❒ 𝗛𝗢𝗪 𝗧𝗢 𝗨𝗦𝗘
+╰┈➤  Type "${global.config.PREFIX}help" to see all commands.
+
+╭┈ ❒ 𝗧𝗜𝗠𝗘 & 𝗗𝗔𝗧𝗘 
+╰┈➤  [ ${time} || ${date} ]
+`.trim();
+
+      api.sendMessage(response, threadID, messageID);
     }
-  }
-};
+  },
 
-module.exports.run = async function () {};
+  run: async function({ event, api }) {
+    const options = {
+      timeZone: 'Asia/Karachi',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    };
+    const formatter = new Intl.DateTimeFormat('en-PK', options);
+    const parts = formatter.formatToParts(new Date());
 
-module.exports.handleReaction = async ({ event, api, handleReaction, client }) => {
-  const { threadID, userID, reaction } = event;
-  
-  if (userID != handleReaction.author) return;
-  if (reaction != "❤") return;
-  
-  api.unsendMessage(handleReaction.messageID);
-  
-  const time = process.uptime();
-  const h = Math.floor(time / (60 * 60));
-  const p = Math.floor((time % (60 * 60)) / 60);
-  const s = Math.floor(time % 60);
-  
-  const msg = `🪐 === [ 𝗠𝗨𝗟𝗧𝗜𝗣𝗟𝗘 𝗨𝗦𝗘𝗗 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 ] === 🪐
-━━━━━━━━━━━━━━━━━━
-🪐 Popular commands are used 🪐
-🪐 === [ Group or Box ] === 🪐
-━━━━━━━━━━━━━━━━━━
-🫂 ${global.config.PREFIX}Help: If you want to see all commands the bot has
-💞 ${global.config.PREFIX}CheckTT: To see the number of messages you have received
-👤 ${global.config.PREFIX}Info: View information 
-🌷 ${global.config.PREFIX}Check: If you want to see the commands about check
-💕 ${global.config.PREFIX}Box: To view information about bot
-☠️ ${global.config.PREFIX}Locate: Filter out the members who don't work
-💝 ${global.config.PREFIX}SetName + Name: Set your name in the group
-━━━━━━━━━━━━━━━━━━
-💜 === [ Games & Entertainment ] === 💜
-━━━━━━━━━━━━━━━━━━
-💍 ${global.config.PREFIX}Pair: Canvas Version 
-🕊️ ${global.config.PREFIX}Pair: Also the compound is the other version
-😻 ${global.config.PREFIX}Pair: pair The Reply Version 
-━━━━━━━━━━━━━━━━━━
-🎵 === [ Video or Music ] === 🎵
-━━━━━━━━━━━━━━━━━━
-💓 ${global.config.PREFIX}YouTube: Download clips on YT
-🎥 ${global.config.PREFIX}TikTok: Tiktok video use command for details
-🎼 ${global.config.PREFIX}Sing: play Songs
-📺 ${global.config.PREFIX}AutoDown: Auto download video when url is detected
-━━━━━━━━━━━━━━━━━━
-💜 === [ UTILITIES ] === 💜
-━━━━━━━━━━━━━━━━━━
-🔗 ${global.config.PREFIX}Imgur + Reply Pic & GIF 
-💗 ${global.config.PREFIX}Ntn & Reply 
-🌹 ${global.config.PREFIX}Avt: Admin 
-💞 ${global.config.PREFIX}QR + Reply Text
-📆 ${global.config.PREFIX}Age + used Command See Details 
-━━━━━━━━━━━━━━━━━━
-💜 === [ BOT INFO ] === 💜
-━━━━━━━━━━━━━━━━━━
-💜 Bot Name: ${global.config.BOTNAME}
-⏰ Uptime: ${h}h ${p}m ${s}s
-🔧 Commands: ${client.commands.size}
-📊 Events: ${client.events.size}
-👥 Users: ${global.data.allUserID.length}
-🏘️ Groups: ${global.data.allThreadID.length}
-💓 Prefix: ${global.config.PREFIX}`;
+    let time = '', date = '';
+    parts.forEach(part => {
+      if (part.type === 'hour') time = part.value;
+      else if (part.type === 'minute') time += `:${part.value}`;
+      else if (part.type === 'second') time += `:${part.value}`;
+      else if (part.type === 'day') date = part.value;
+      else if (part.type === 'month') date += `/${part.value}`;
+      else if (part.type === 'year') date += `/${part.value}`;
+    });
 
-  try {
-    const picture = (await axios.get(`https://i.imgur.com/m4ruygS.jpg`, { responseType: "stream" })).data;
-    return api.sendMessage({
-      body: msg,
-      attachment: picture
-    }, threadID);
-  } catch (error) {
-    // Fallback without image if API fails
-    return api.sendMessage(msg, threadID);
+    
+
   }
 };

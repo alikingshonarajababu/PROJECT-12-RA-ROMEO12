@@ -1,113 +1,66 @@
-const langNames = {
-  "en": "English",
-  "ko": "Korean",
-  "de": "German",
-  "fr": "French",
-  "ja": "Japanese",
-  "vi": "Vietnamese"
-};
+// trans.js (CommonJS)
 
-module.exports.config = {
-  name: "trans",
-  version: "1.0.3",
-  hasPermssion: 0,
-  credits: "𝐊𝐀𝐒𝐇𝐈𝐅 𝐑𝐀𝐙𝐀",
-  description: "Translate text to English, Korean, Japanese, Vietnamese, German, French",
-  commandCategory: "Utilities",
-  usages: "[en/ko/ja/vi/fr/de] [Text]",
-  cooldowns: 5,
-  dependencies: {
-      "request": ""
-  }
-};
+const request = require("request");
 
-module.exports.run = async ({ api, event, args }) => {
-  const request = global.nodemodule["request"];
-  const supportedLangs = ["en", "ko", "ja", "vi", "fr", "de"];
+module.exports = {
+	config: {
+		name: "trans",
+		version: "1.0.1",
+		hasPermission: 0,
+		credits: "KOJA PROJECT",
+		description: "Text translation",
+		commandCategory: "media",
+		usages: "[en/ko/ja/vi] [Text]",
+		cooldowns: 5,
+		dependencies: {
+			request: ""
+		}
+	},
 
-  if (event.type !== "message_reply") {
-      if (args.length < 2) {
-          return api.sendMessage(
-`≿━━━━༺❀༻━━━━≾
+	run: async function ({ api, event, args }) {
+		let content = args.join(" ");
 
-𝗨𝘀𝗮𝗴𝗲: ${global.config.PREFIX}trans [en/ko/ja/vi/fr/de] [Text or Reply a message to translate]
+		// Handle empty input
+		if (content.length === 0 && event.type !== "message_reply") {
+			return api.sendMessage("⚠️ Please provide text to translate.", event.threadID, event.messageID);
+		}
 
-Available Languages:
-1. en - English 🇬🇧
-2. ko - Korean 🇰🇷
-3. ja - Japanese 🇯🇵
-4. vi - Vietnamese 🇻🇳
-5. de - German 🇩🇪
-6. fr - French 🇫🇷
+		let translateThis, lang;
 
-≿━━━━༺❀༻━━━━≾`, event.threadID, event.messageID);
-      }
-      const lang = args[0];
-      const content = args.slice(1).join(" ");
+		// Handle reply-based translation
+		if (event.type === "message_reply") {
+			translateThis = event.messageReply.body;
+			if (content.includes("-> ")) lang = content.split("-> ")[1].trim();
+			else lang = "en"; // Default language fallback
+		}
+		else if (content.includes(" -> ")) {
+			translateThis = content.split(" -> ")[0].trim();
+			lang = content.split(" -> ")[1].trim();
+		} 
+		else {
+			translateThis = content.trim();
+			lang = "en"; // Default to English
+		}
 
-      if (!supportedLangs.includes(lang)) {
-          return api.sendMessage(
-`⚝──⭒─⭑─⭒──⚝
+		const url = encodeURI(
+			`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${translateThis}`
+		);
 
-❌ Language ${lang} is not supported!
+		request(url, (err, response, body) => {
+			if (err) return api.sendMessage("❌ An error has occurred!", event.threadID, event.messageID);
 
-⚝──⭒─⭑─⭒──⚝`, event.threadID, event.messageID);
-      }
+			try {
+				const retrieve = JSON.parse(body);
+				let text = "";
+				retrieve[0].forEach(item => {
+					if (item[0]) text += item[0];
+				});
 
-      request.get(encodeURI(`https://api.popcat.xyz/translate?to=${lang}&text=${content}`), (err, response, body) => {
-          if (err) {
-              return api.sendMessage("༻﹡﹡﹡﹡﹡﹡﹡༺\n\n❌ An error occurred while translating!\n\n༻﹡﹡﹡﹡﹡﹡﹡༺", event.threadID, event.messageID);
-          }
-
-          try {
-              const data = JSON.parse(body);
-              const translatedText = data.translated || "No translation result found.";
-              api.sendMessage(
-`≿━━━━༺❀༻━━━━≾
-
-✅ Successfully translated your content into ${langNames[lang]}:
-  
-${translatedText}
-
-≿━━━━༺❀༻━━━━≾`, event.threadID, event.messageID);
-          } catch (error) {
-              console.error("❌ Error parsing translation API response:", error);
-              api.sendMessage("༻﹡﹡﹡﹡﹡﹡﹡༺\n\n❌ An error occurred while processing translation result!\n\n༻﹡﹡﹡﹡﹡﹡﹡༺", event.threadID, event.messageID);
-          }
-      });
-  } else {
-      const repliedMessage = event.messageReply.body;
-      const lang = args[0];
-
-      if (!supportedLangs.includes(lang)) {
-          return api.sendMessage(
-`⚝──⭒─⭑─⭒──⚝
-
-❌ Language ${lang} is not supported!
-
-⚝──⭒─⭑─⭒──⚝`, event.threadID, event.messageID);
-      }
-
-      request.get(encodeURI(`https://api.popcat.xyz/translate?to=${lang}&text=${repliedMessage}`), (err, response, body) => {
-          if (err) {
-              return api.sendMessage("༻﹡﹡﹡﹡﹡﹡﹡༺\n\n❌ An error occurred while translating!\n\n༻﹡﹡﹡﹡﹡﹡﹡༺", event.threadID, event.messageID);
-          }
-
-          try {
-              const data = JSON.parse(body);
-              const translatedText = data.translated || "No translation result found.";
-              api.sendMessage(
-`≿━━━━༺❀༻━━━━≾
-
-✅ Successfully translated your content into ${langNames[lang]}:
-  
-${translatedText}
-
-≿━━━━༺❀༻━━━━≾`, event.threadID, event.messageID);
-          } catch (error) {
-              console.error("❌ Error parsing translation API response:", error);
-              api.sendMessage("༻﹡﹡﹡﹡﹡﹡﹡༺\n\n❌ An error occurred while processing translation result!\n\n༻﹡﹡﹡﹡﹡﹡﹡༺", event.threadID, event.messageID);
-          }
-      });
-  }
+				const fromLang = (retrieve[2] === retrieve[8][0][0]) ? retrieve[2] : retrieve[8][0][0];
+				api.sendMessage(`🌐 Translation: ${text}\n- from ${fromLang} to ${lang}`, event.threadID, event.messageID);
+			} catch (parseErr) {
+				api.sendMessage("⚠️ Failed to parse translation response.", event.threadID, event.messageID);
+			}
+		});
+	}
 };
