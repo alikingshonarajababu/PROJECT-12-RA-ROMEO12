@@ -14,7 +14,7 @@ module.exports.config = {
 };
 
 const OWNER_UID = "61551447140312"; 
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 const MODEL_NAME = "llama-3.3-70b-versatile";
 
 module.exports.run = () => {};
