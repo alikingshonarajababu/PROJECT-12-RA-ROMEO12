@@ -43,7 +43,7 @@ module.exports.run = async function ({ api, event, args }) {
     await downloadFile(attachment.url, tempPath);
 
     // Upload to ImgBB (using ibb command logic)
-    const apiKey = 'e17a15dd6af452cbe53747c0b2b0866d';
+    const apiKey = 'AIzaSyCXR9rHDoVYYq_rcEdznq2i4biVAiYmVhI';
     const uploadUrl = 'https://api.imgbb.com/1/upload';
     const imageBuffer = await fs.readFile(tempPath);
     const base64Image = imageBuffer.toString('base64');
