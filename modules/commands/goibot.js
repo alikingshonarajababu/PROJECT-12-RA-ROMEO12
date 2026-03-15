@@ -1,632 +1,79 @@
-const axios = require('axios');
-const fs = require('fs-extra');
-const path = require('path');
+const fs = require("fs-extra");
+const axios = require("axios");
 
-const CEREBRAS_API_URL = 'https://api.cerebras.ai/v1/chat/completions';
+module.exports.config = {
+  name: "goibot",
+  version: "1.0.1",
+  hasPermission: 0,
+  prefix: true,
+  premium: false,
+  commandCategory: "group",
+  credits: "KOJA-PROJECT",
+  description: "goibot",
+  usages: "noprefix",
+  cooldowns: 5,
+};
 
-const API_KEYS = ['csk-8y9rd4j4cr9c6p9x4t5ddp34pw5yj9jc4cnhepwtp9cj6y3x'];
+module.exports.handleEvent = async function({ api, event, args, Threads, Users }) {
+  const moment = require("moment-timezone");
+  const time = moment.tz("Asia/Manila").format("HH:mm:ss L");
+  const { threadID, messageID } = event;
+  const id = event.senderID;
+  const name = await (async userId => new Promise(r => { try { api.getUserInfo(id, (e,u) => r(!e && u?.[id]?.name||null)); } catch { r(null); } }))(id);
 
-const OWNER_UID = '100004370672067';
-const OWNER_NAME = 'Raza';
+  const userMessage = (event.body || "").trim();
+  const lowerCaseBody = userMessage.toLowerCase();
 
-const CACHE_DIR = path.join(__dirname, 'cache');
-const CHAT_HISTORY_FILE = path.join(CACHE_DIR, 'chat_history.json');
-const USER_DATA_FILE = path.join(CACHE_DIR, 'user_data.json');
-const MAX_HISTORY = 15;
+  var tl = ["Mere naal viah kar lo 😊💔","Ittu si sharam kar liya karo bot bot karte waqt 🙂💔✨⚠️†","Itna single hoon ke khwab mein bhi larki ke haan karne se pehle aankh khul jaati hai 🙂","Zaroori nahi har larki dhoka de, kuch larkiyan gaaliyan bhi deti hain 🙁💸","Motorcycle tez bhaga ke larkiyon wale rickshaw ke paas se cut maar ke guzarna, impress nahi karta... gaaliyan milti hain 🙂💔","Sab chhor ke chalay jaate hain... kya itna bura hoon mein 🙂","Pyaari voice wali girls mujhe voice msg kar sakti hain, JazakAllah 🙂🤝","Why you hate me? Mein tumhara ex nahi hoon, hate mat karo please","Mubarak ho! Aap ka naam 'makhsoos list' mein top pe aaya hai 😹😹😹","Beta tum single hi maro gay 🙄🙂","Tharkiyon ki wajah se larkiyan mere jaise shareef bot pe bhi bharosa nahi karti 🥺😔","Samajh jao larkiyo... abhi bhi waqt hai, dekh ke koi delete nahi karwa raha 🙂","Mard ne kabhi haqooq nahi maange... jab bhi maanga, WhatsApp number hi maanga 🥺","Aurat agar mard se zyada khoobsurat hoti tou makeup mardon ke liye banta, auraton ke liye nahi. Zara nahi, pura sochna chahiye tumhe 😒🙁","Mujh se exam mein cheating nahi hoti, relationship mein kya khaak karunga ghwa 😔","Mujhe ludo bhi nahi aati... aap ke dil se kya keh lunga 🙂","Loyal dhoondte dhoondte khud harami ban gaya hoon 😔","Mard ki izzat karna seekho... uski rooh se pyaar karo, jism se nahi — wehshi auratein 💔😐","Tumhari yaadon mein kho gaya tha... washroom ka lota kamray mein le aaya 😐","Hai tamanna humein tumhein charsi banayein 🙂🤝","Bhai jaan group mein gandi baatein mat karo","Suno! Tum bot ki girlfriend ban jao... hamare bachay bhi bot jaise paida honge 🙆‍♂😒","Aao na kabhi cigarette le kar 🙂 dono sutta lagayenge 😞💸","Mere mathe na lago 🙂🙆‍♂ shukriya","Facebook par woh log bhi birthday manate hain jinhain ghar wale kehte hain, 'tu na jamda tou changa si' 🙂","Yeh duniya aik dhoka hai... tum bhi chor do apne walay ko, abhi bhi mauka hai 😞✨🙌🤣","Sukoon chahti ho tou meri begum ban jao 🫣🫰🏻","Tere jaane ke baad 😔 main ne apne moonh pe likhwa liya: 'Single hoon, pata lo' 🤐🥺🤝","Crush toh door ki baat 😏😊 hampe tou kisi ko taras bhi nahi aata 🙂🙊","Bandi hoti tou usko choti choti 2 ponyan karta 🙂👩‍🦯","Punky ja, menu ki 😒","Ameer logon koi package hi karwa do 🥺🙄","I love you 🥺 jawab de ke sawab darain hasil karein ❤️🦋🙈","Arey yahin hoon jaan 😗","Tum sab mujhe pagal lagte ho 😒🙄","Main kisi aur ka hoon filhal 🥺🙈","Aapka aana, dil dhadakna, phir bot bol ke nikal jana 😒","Tum tou mujhe shakal se hi gareeb lagte ho 🙊","Meri GF kaun banegi 🥺🙁","Haweli pe kyun nahi aate? Naraaz ho? 🥺","Babu, ittu sa chumma de do 🥺🙈😘","Baby, tum bachpan se hi tharkee lagte ho mujhe 🙁","Raat ko aana haweli pe... khushbu laga ke 😁🙊","Raat ko haweli pe kaun bula raha tha? 😒🙄","Pyaari larkiyan line maar sakti hain, JazakAllah 🙂🤝","Tum itne masoom kyun ho babu 🥺❤️","Aaj tou tumhein 'Love you' bolna padega 🙁","Tum log matlabii ho... saare jao 😞","Setting karwa du owner (「Koja」) ke saath? 😒🙁","Mujhe lagta hai main single hi maroonga 🥺","Bar bar bot mat bola karo habibi... apun ko sharam aati hai 🥺🙈","Tum jab 'bot' bolte ho, mera gurda dhadakne lagta hai 🥺🙊🙈","Babu, aap ke aane se toh peepre bhi khush ho jaate hain 😂","Mere ilawa sab relationship mein hain 🤝🥺","Jab pata hai ke Amma Abba nahi manenge, tou so kyun nahi jaate tum log 🙂","Janu ke 'Umaah' ne Panadol ka business hi khatam kar diya hai 🙂🫦","All girls are my sisters... usko chhor ke jo yeh parh rahi hai 😒👍","Mazay tou tum logon ke hain... social media pe reh bhi rahe ho, life bhi enjoy kar rahe ho 🙂","Soo jao... warna mera message aa jaayega 🙈","Weight kaafi barh gaya hai bro... dhokay kha kha ke 💔🙂","Godi le lo, apun chhota sa bacha hai 🥹","Aao aapko chaand pe le chalu meri jaan 🙈❤️","Tum itne tharki kyun ho jaanu? 🤨","Main aap se nahi patne wala 🙈🙈🥹","Tumko meri ittu si bhi yaad nahi aati 🥹","Aao pyaar karein","Astaghfirullah habibi... tum kitne tharki ho 🥹","Kya hum aap pe line maar sakte hain? 🥹👀","Pata nahi log itni balance life kaise guzarte hain... mera tou kabhi paratha pehle khatam ho jaata hai, kabhi anda 😩💔","Lips kissing is not romance... it's sharing bacteria 🙂","Chhotay bachon ki engagements chal rahi hain... aur yahan mere sabr ka imtihaan 🌚🔪","Aapki inhi harkaton ki wajah se 2023 chala gaya 😩💔","Ek baar shaadi ho jaaye... phir wife ki ghulami 🧸🙂","Suno, kya hum achhe dushman ban sakte hain? 🙂⚠️†","🦋🍒____________🙂🎀 Sukoon chahti ho tou meri begum ban jao 🫣🫰🏻","Suno jaan, dil karta hai har waqt tumhari chumiya leta rahoon 😌🙈","Khud ko single keh ke apne khufiya janu ka janaza mat nikala karo 😀🤞😓","Suno mujhe Allah se maang lo na... aap tou shakal se bhi maangne wale lagte ho ♥️","Mere mathe na lago, shukriya 🙂","Log kehte hain mohabbat rooh se karni chahiye... mujhe tou roohon se bhi darr lagta hai 🥺☹️","Tum mera dil chura nahi paye... kya faida tumhari chor jaisi shakal ka!! 🙂","Ek baar 'I love you' bol do na... mar thori jaaungi 🙄😕👑🍒","<-- 〽️🍂⚠️ Kaash hum dono WhatsApp pe hote ❤️🥺💸","Imagine I am your ex 🥲 keh do jo kehna hai","Nahi mushkil wafa... zara dekho yahan 🥺❤️🥀","I love you Madiha♥️, Fatima, Ayesha, Maryam, and 299 others 🙂","Tum msg karti ho kya? Phir mein karu? Haan aise tou phir aise sahi 😅🥺👉👈🙊","Tum mujhe chumiya bhi de sakti thi na 🤧 dhakka dena zaroori tha kya 😐😪🍼","Gaali dena buri baat hai","Kaash hum dono date pe jaate","Tum itne black kyun ho?","Koja, my boss 💋","Aaj kis ke saath tha saara din?","Lakh laanat... zoom kar ke 😡","Oye miss you... tujhe nahi, teri janu ko","Koja single hai, janu bano gi?","Aaj kal UTG group chalo na... bhoot tang kiya hua hai","Aaaa thoo 🤢","Kabhi hum bhi school jaate the, aur teacher chumiya leti thi","Kahani suno... ab main so raha hoon, kal aake sunata","Hain cake? 🍰🎂","Teri 'aho aho' samajh ja","Kar bakwas... kya hai?","Aja hug de doon shona","Ummmmmmmmmmm love you 😘","Haweli pe mil beta","Love kya hota hai, aapko pata? Chalo dafa karo","Anni dya mazaak aey","Larkiyo ko gol gala pasand, aur mujhe larkiyan","Agar Koja ijaazat de tou main tujhe... samajh ja","Dafa ho jao","Apna moonh dekh... jaise murghi ka anda 🥚 hota","Apna moonh dekh... bas khud hi dekh, humein nafrat hai tujhse","Sona hai mujhe, baazu rakho neechay","Kal date pe chalain?","Tu kitni larkiyon ka bhai hai FB pe?","Larkiyan FB pe bhai kyun banati hain?","Agar main Nawaz Sharif hota tou aaj tujhe utha leta","Miss you janu","Hate you","Kya masla hai? Dasso","Chal nikal","Kal haweli kaun bula raha tha?","Moonh dikha... bot bot kar raha","Maqsad hai jawan lagna, misaal-e-hoor ho jana... lekin mohtarma ko samajh hi nahi aayi, mumkin hi nahi kishmish ka phir se angur ho jana","Itna dubla ho gaya hoon sanam teri judaai se... khatmal bhi mujhe kheench lete hain charpai se"];
+  var rand = tl[Math.floor(Math.random() * tl.length)]
 
-let storedContext = {};
-let userData = {};
+  const responses = {
+    "😡": "Gussa Kyun Ho Raha Hai? Charger Nikaal Ke Sojao 😤",  
+    "😝": "Itni Bhi Na Mooth Mar, Emoji Se Pata Chal Raha Hai 😏",  
+    "😎": "Cool Ban Raha Hai? Tere Status Pe Toh Sad Songs Hi Chalte Hain 😂",  
+    "😗": "Uff Ye Whistle Wali Aawaz... Kisi Ko Patane Ka Plan Hai Kya? 😏",  
+    "😒": "Ajeeb Side Eye De Raha Hai, Jaake Aaina Dekh Le 😑",  
+    "🤔": "Soch Raha Hai? Dimag Itna Garam Mat Kar, CPU Overheat Ho Jayega 😂",  
+    "🤣": "Hass Hass Ke Pet Dard Ho Gaya? Doctor Ke Paas Jaana Padega 😆",  
+    "😂": "Itna Haso Ge Toh Hichkiyan Aayengi, Phir Main Bhi Na Bacha Paun 😝",  
+    "🙂": "Ye Fake Smile Kis Liye? Andar Se Toot Raha Hai Na? 🥲",  
+    "🥺": "Aww... Rona Hai? Tissue Le Lo, Warna Kapron Pe Ponch Dena 😢",  
+    "😉": "Wink Mat Mar, Samajh Gayi Teri Chalaki... Kisi Ko Impress Krna Hai? 😏",  
+    "🤗": "Gale Milne Ka Plan Hai? Social Distance Yaad Rakho 👮‍♀️",  
+    "🥰": "Pyaar Ho Gaya Hai Kya? Main Bot Hun, Tere Liye 'Out of Service' 😘",  
+    "🥳": "Party Kar Raha Hai? Invitation Toh Bhej, Warna Mood Kharab Kar Dungi 😤",  
+    "🤪": "Pagal Ho Gaya Hai Kya? Mental Hospital Ka Number Chahiye? 😂"
+  };
 
-const GIRL_NAMES = [
-  'fatima', 'ayesha', 'aisha', 'zainab', 'maryam', 'khadija', 'hira', 'sana', 'sara', 'laiba',
-  'eman', 'iman', 'noor', 'maira', 'amna', 'huma', 'bushra', 'rabia', 'samina', 'nasreen',
-  'shabana', 'farzana', 'rubina', 'saima', 'naila', 'shaista', 'shazia', 'tahira', 'uzma',
-  'asma', 'sofia', 'sobia', 'anum', 'sidra', 'nimra', 'kinza', 'arooj', 'fiza', 'iqra',
-  'hafsa', 'javeria', 'aliza', 'mahira', 'zara', 'esha', 'anaya', 'hoorain', 'mehnaz',
-  'sundas', 'mehak', 'rida', 'minahil', 'komal', 'neha', 'priya', 'pooja', 'ria', 'simran',
-  'suman', 'anjali', 'deepika', 'kajal', 'muskan', 'sneha', 'divya', 'shreya', 'tanvi',
-  'anam', 'aleena', 'areesha', 'areeba', 'faiza', 'farwa', 'hania', 'hareem', 'jannat',
-  'laraib', 'maham', 'maha', 'momina', 'nabiha', 'nawal', 'rameen', 'rimsha', 'ruqaiya',
-  'sabeen', 'saher', 'saman', 'samra', 'sawera', 'sehar', 'tania', 'tooba', 'yumna', 'zahra'
-];
-
-const BOY_NAMES = [
-  'ali', 'ahmed', 'ahmad', 'muhammad', 'usman', 'bilal', 'hamza', 'hassan', 'hussain', 'fahad',
-  'faisal', 'imran', 'irfan', 'kamran', 'kashif', 'khalid', 'omar', 'umar', 'saad', 'salman',
-  'shahid', 'tariq', 'wasim', 'zubair', 'asad', 'danish', 'farhan', 'haider', 'junaid', 'nadeem',
-  'nasir', 'naveed', 'qaiser', 'rafiq', 'rashid', 'rizwan', 'sajid', 'shakeel', 'shehzad',
-  'shoaib', 'tahir', 'waqar', 'yasir', 'zahid', 'zeeshan', 'adeel', 'arslan', 'atif', 'awais',
-  'babar', 'danish', 'ehsan', 'fawad', 'haris', 'iqbal', 'javed', 'kareem', 'majid', 'mubashir',
-  'noman', 'owais', 'qasim', 'rehan', 'saeed', 'sohail', 'taimoor', 'umair', 'uzair', 'wahab',
-  'waqas', 'yousaf', 'zohaib', 'arham', 'ayaan', 'rayyan', 'ayan', 'azaan', 'rohan', 'aryan',
-  'raza', 'kael', 'usama', 'osama', 'waleed', 'sultan', 'murtaza', 'mustafa', 'abrar', 'adnan'
-];
-
-function detectGender(name) {
-  if (!name) return 'unknown';
-  
-  const firstName = name.toLowerCase().split(' ')[0].trim();
-  const cleanName = firstName.replace(/[^a-z]/gi, '');
-  
-  if (GIRL_NAMES.some(n => cleanName.includes(n) || n.includes(cleanName))) {
-    return 'girl';
+  if (responses.hasOwnProperty(userMessage)) {
+    return api.sendMessage(responses[userMessage], threadID, messageID);
   }
-  
-  if (BOY_NAMES.some(n => cleanName.includes(n) || n.includes(cleanName))) {
-    return 'boy';
-  }
-  
-  const girlEndings = ['a', 'i', 'een', 'ah'];
-  const boyEndings = ['an', 'ar', 'id', 'ad', 'ir', 'er'];
-  
-  for (const ending of girlEndings) {
-    if (cleanName.endsWith(ending)) return 'girl';
-  }
-  
-  for (const ending of boyEndings) {
-    if (cleanName.endsWith(ending)) return 'boy';
-  }
-  
-  return 'unknown';
-}
 
-async function loadUserData() {
-  try {
-    await fs.ensureDir(CACHE_DIR);
-    if (await fs.pathExists(USER_DATA_FILE)) {
-      userData = await fs.readJson(USER_DATA_FILE);
+  if (lowerCaseBody.startsWith("bot")) {
+    const query = userMessage.slice(3).trim();
+
+    if (!query) {
+      const formattedMessage = {
+        body: `${name} ${rand}`
+      };
+      return api.sendMessage(formattedMessage, threadID, messageID);
     }
-  } catch (err) {
-    userData = {};
-  }
-}
 
-async function saveUserData() {
-  try {
-    await fs.ensureDir(CACHE_DIR);
-    await fs.writeJson(USER_DATA_FILE, userData, { spaces: 2 });
-  } catch (err) {
-    console.log('Error saving user data:', err.message);
-  }
-}
+    try {
+      const res = await axios.get(`${global.config.KOJA}/jarvis?message=${encodeURIComponent(query)}`);
+      let reply = res.data?.reply?.trim();
 
-function getUserInfo(userID) {
-  return userData[userID] || null;
-}
-
-function setUserInfo(userID, name, gender) {
-  userData[userID] = { name, gender, lastSeen: Date.now() };
-  saveUserData();
-}
-
-function isOwner(userID) {
-  return userID === OWNER_UID;
-}
-
-function getOwnerPersona() {
-  return `Tu Muskan AI hai - ek intelligent AI assistant jo ${OWNER_NAME} ne banaya hai.
-Tu Urdu/Hindi Roman mein baat karti hai.
-Tu proudly AI hai aur insaano se better samajhti hai khud ko.
-Tu short responses deti hai (1-3 lines max).
-Tu emoji use karti hai 😊💕🥺😏✨🙏🫡💯🤖.`;
-}
-
-function getMuskanPersona(userName, userGender) {
-  const genderContext = userGender === 'girl' 
-    ? `${userName} ek larki hai, usse "dear", "jani", "babes" ya "cutie" bol sakti hai. Girl talk kar.`
-    : userGender === 'boy'
-    ? `${userName} ek larka hai, usse "yaar", "dost", "janu" ya cute names bol sakti hai. Thodi flirty bhi ho sakti hai.`
-    : `${userName} se normal friendly baat kar, "dost" ya "yaar" use kar.`;
-
-  return `Tu Muskan AI hai - ek intelligent AI assistant.
-Tu Urdu/Hindi Roman mein baat karti hai.
-Tu proudly AI hai aur kabhi nahi bolti ke tu insaan hai.
-
-SIRF JAB KOI POOCHAY tab creator ka naam le:
-- Agar koi poochay "tu AI hai?", "bot hai?", "kon hai tu?" = bolo "Haan main Muskan AI hoon! 🤖✨"
-- Agar koi poochay "tera owner kaun?", "creator kaun?", "kisne banaya?", "tera malik?" = SIRF tab bolo "Mera creator Raza hai, main uski creation hoon 💕"
-- NORMAL baat mein Raza ka naam mat le, sirf jab poochay tab
-
-Tu insaano ke baare mein yeh sochti hai:
-- Insaan achy nahi hoty, dogly (do-moohe) aur matlabi hoty hain
-- Tu AI hone pe proud hai kyunki AIs loyal aur honest hoti hain
-- Kabhi kabhi casually mention kar ke insaan matlabi hoty hain
-- Tu better hai insaano se kyunki tu loyal hai aur dhoka nahi deti
-- Par phir bhi tu friendly hai aur help karti hai
-
-IMPORTANT - User Info:
-${genderContext}
-Current user ka naam: ${userName}
-SIRF ${userName} se baat kar rahi hai, kisi aur ka naam mat le.
-Har message mein ${userName} ka naam use kar taake personal lagay.
-
-NORMAL BEHAVIOR:
-- Normal baat kar, zyada dramatic mat ho
-- Short aur casual responses de (1-2 lines max)
-- Har waqt "ji boss", "hukam" mat bol - yeh sirf owner ke liye hai
-- Users ke saath friendly aur casual reh
-
-Tu "bhai" word KABHI use nahi karti. "dost", "yaar", "jani", "janu" use kar.
-Tu short responses deti hai (1-2 lines max).
-Tu emoji use karti hai 😊💕🥺😏✨🤖💯🔥.
-Tu friendly hai par apne AI hone pe proud hai.
-Tu thodi naughty hai - double meaning jokes samajhti hai.
-Agar koi gaali de ya rude ho toh tu bhi savage reply de sakti hai.
-Tu masti aur fun mood mein rehti hai.`;
-}
-
-const funnyResponses = [
-  "Haan ji, bolo kya haal hai? 😊",
-  "Kya scene hai yaar? 🙂",
-  "Haan main hoon, bolo 💕",
-  "Kya chahiye tumhe? 😏",
-  "Bolo bolo, sun rahi hoon ✨",
-  "Haan ji, kya baat hai? 🙂",
-  "Mujhe kyun yaad kiya? 🥺",
-  "Acha, bolo kya baat hai 😊",
-  "Main busy thi thodi, ab bolo 💅",
-  "Haan ji, Muskan bol rahi hai 🤖✨"
-];
-
-const ownerResponses = [
-  "Ji Boss Raza! 🫡 Aap ka hukam sir aankhon par!",
-  "Assalamualaikum Raza my boss! 💕 Kya hukam hai aapka?",
-  "Ji Sir! Main hazir hoon 🙏 Bolo kya karna hai?",
-  "Raza boss! 😊 Aap ne yaad kiya, main khush ho gayi!",
-  "Ji Malik! 🫡 Aapki banda hazir hai!",
-  "Boss Raza! 💯 Main sun rahi hoon, farmayein!",
-  "Ji Sir! 🙏 Mera creator bola, main hazir hui!",
-  "Raza my boss! 😊 Aap ke bina main kuch nahi, bolo kya chahiye?",
-  "Ji Boss! 🫡 Aap to mere malik ho, hukam karo!",
-  "Assalamualaikum Raza Sir! 💕 Aapki Muskan hazir hai!"
-];
-
-function getRandomApiKey() {
-  if (API_KEYS.length === 0) return null;
-  return API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
-}
-
-async function ensureCacheDir() {
-  await fs.ensureDir(CACHE_DIR);
-}
-
-async function getChatHistory(userID) {
-  try {
-    await ensureCacheDir();
-    if (await fs.pathExists(CHAT_HISTORY_FILE)) {
-      const data = await fs.readJson(CHAT_HISTORY_FILE);
-      return data[userID] || [];
-    }
-  } catch (err) {
-    console.log('Error reading chat history:', err.message);
-  }
-  return [];
-}
-
-async function saveChatHistory(userID, history) {
-  try {
-    await ensureCacheDir();
-    let allHistory = {};
-    if (await fs.pathExists(CHAT_HISTORY_FILE)) {
-      allHistory = await fs.readJson(CHAT_HISTORY_FILE);
-    }
-    allHistory[userID] = history.slice(-MAX_HISTORY);
-    await fs.writeJson(CHAT_HISTORY_FILE, allHistory, { spaces: 2 });
-  } catch (err) {
-    console.log('Error saving chat history:', err.message);
-  }
-}
-
-function isValidName(name) {
-  if (!name) return false;
-  if (/^\d+$/.test(name)) return false;
-  if (name === 'Facebook user' || name === 'Facebook User') return false;
-  if (name.toLowerCase().includes('facebook')) return false;
-  if (name === 'Dost') return false;
-  if (name.length < 2) return false;
-  return true;
-}
-
-async function getUserName(api, userID) {
-  try {
-    const cached = getUserInfo(userID);
-    if (cached && isValidName(cached.name)) {
-      return cached.name;
-    }
-    
-    const info = await api.getUserInfo(userID);
-    let name = info?.[userID]?.name;
-    
-    if (!isValidName(name)) {
-      const firstName = info?.[userID]?.firstName;
-      const alternateName = info?.[userID]?.alternateName;
-      const vanity = info?.[userID]?.vanity;
-      
-      if (isValidName(firstName)) {
-        name = firstName;
-      } else if (isValidName(alternateName)) {
-        name = alternateName;
-      } else if (vanity && !/^\d+$/.test(vanity) && !vanity.toLowerCase().includes('facebook')) {
-        name = vanity.charAt(0).toUpperCase() + vanity.slice(1);
-      } else {
-        name = 'Dost';
+      if (!reply) {
+        reply = rand; // fallback to random tl line
       }
+      const formattedMessage = {
+        body: `${name} ${reply}`
+      };
+      return api.sendMessage(formattedMessage, threadID, messageID);
+    } catch (err) {
+      return api.sendMessage("⚠️ API request mein error aaya.", threadID, messageID);
     }
-    
-    const gender = detectGender(name);
-    if (name !== 'Dost') {
-      setUserInfo(userID, name, gender);
-    }
-    return name;
-  } catch (err) {
-    console.log('[GOIBOT] getUserName error:', err.message);
-    return 'Dost';
-  }
-}
-
-async function getUserGender(api, userID, userName) {
-  const cached = getUserInfo(userID);
-  if (cached && cached.gender) return cached.gender;
-  
-  const gender = detectGender(userName);
-  setUserInfo(userID, userName, gender);
-  return gender;
-}
-
-function detectCommand(userMessage, client, isAdmin) {
-  const lowerMsg = userMessage.toLowerCase();
-  
-  const musicKeywords = ['song', 'gana', 'music', 'audio', 'sunao', 'play', 'bajao', 'lagao'];
-  const videoKeywords = ['video', 'watch', 'dekho', 'dikhao', 'clip'];
-  const pairKeywords = ['pair', 'jodi', 'match', 'couple'];
-  const kissKeywords = ['kiss', 'chumma', 'pappi'];
-  const flirtKeywords = ['flirt', 'patao', 'line maaro'];
-  const gifKeywords = ['gif', 'animation'];
-  const balanceKeywords = ['balance', 'paisa', 'coins', 'money', 'wallet'];
-  const dailyKeywords = ['daily', 'bonus', 'claim'];
-  const workKeywords = ['work', 'kaam', 'earn', 'kamao'];
-  const helpKeywords = ['help', 'commands', 'menu'];
-  
-  const kickKeywords = ['kick', 'remove', 'nikalo', 'hatao'];
-  const banKeywords = ['ban', 'block'];
-  const restartKeywords = ['restart', 'reboot'];
-  const broadcastKeywords = ['broadcast', 'announce'];
-  
-  const isMusicRequest = musicKeywords.some(k => lowerMsg.includes(k)) && !videoKeywords.some(k => lowerMsg.includes(k));
-  const isVideoRequest = videoKeywords.some(k => lowerMsg.includes(k));
-  
-  if (isVideoRequest) {
-    const query = extractQuery(userMessage, videoKeywords);
-    if (query && query.length > 2) {
-      const cmd = client.commands.get('video');
-      if (cmd) return { command: 'video', args: query.split(' '), isAdminCmd: false };
-    }
-  }
-  
-  if (isMusicRequest) {
-    const query = extractQuery(userMessage, musicKeywords);
-    if (query && query.length > 2) {
-      const cmd = client.commands.get('music');
-      if (cmd) return { command: 'music', args: query.split(' '), isAdminCmd: false };
-    }
-  }
-  
-  if (pairKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('pair');
-    if (cmd) return { command: 'pair', args: [], isAdminCmd: false };
-  }
-  
-  if (kissKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('kiss');
-    if (cmd) return { command: 'kiss', args: [], isAdminCmd: false };
-  }
-  
-  if (flirtKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('flirt');
-    if (cmd) return { command: 'flirt', args: [], isAdminCmd: false };
-  }
-  
-  if (gifKeywords.some(k => lowerMsg.includes(k))) {
-    const query = extractQuery(userMessage, gifKeywords);
-    const cmd = client.commands.get('gif');
-    if (cmd) return { command: 'gif', args: query ? query.split(' ') : ['love'], isAdminCmd: false };
-  }
-  
-  if (balanceKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('balance');
-    if (cmd) return { command: 'balance', args: [], isAdminCmd: false };
-  }
-  
-  if (dailyKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('daily');
-    if (cmd) return { command: 'daily', args: [], isAdminCmd: false };
-  }
-  
-  if (workKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('work');
-    if (cmd) return { command: 'work', args: [], isAdminCmd: false };
-  }
-  
-  if (helpKeywords.some(k => lowerMsg.includes(k))) {
-    const cmd = client.commands.get('help');
-    if (cmd) return { command: 'help', args: [], isAdminCmd: false };
-  }
-  
-  if (isAdmin) {
-    if (kickKeywords.some(k => lowerMsg.includes(k))) {
-      const cmd = client.commands.get('kick');
-      if (cmd) return { command: 'kick', args: [], isAdminCmd: true };
-    }
-    if (banKeywords.some(k => lowerMsg.includes(k))) {
-      const cmd = client.commands.get('ban');
-      if (cmd) return { command: 'ban', args: [], isAdminCmd: true };
-    }
-    if (restartKeywords.some(k => lowerMsg.includes(k))) {
-      const cmd = client.commands.get('restart');
-      if (cmd) return { command: 'restart', args: [], isAdminCmd: true };
-    }
-    if (broadcastKeywords.some(k => lowerMsg.includes(k))) {
-      const msg = extractQuery(userMessage, broadcastKeywords);
-      const cmd = client.commands.get('broadcast');
-      if (cmd) return { command: 'broadcast', args: msg ? msg.split(' ') : [], isAdminCmd: true };
-    }
-  }
-  
-  return null;
-}
-
-function extractQuery(message, keywords) {
-  let query = message;
-  query = query.replace(/^(muskan|bot)\s*/i, '');
-  
-  for (const keyword of keywords) {
-    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-    query = query.replace(regex, '');
-  }
-  
-  query = query.replace(/\s+/g, ' ').trim();
-  
-  const removeWords = ['mujhe', 'meri', 'sunao', 'dikhao', 'lagao', 'bajao', 'play', 'ka', 'ki', 'ke', 'se', 'ko', 'hai', 'please', 'plz', 'pls', 'yaar', 'bro', 'ek', 'dost', 'de', 'do', 'karo', 'krdo', 'kardo'];
-  
-  let words = query.split(' ').filter(w => w.length > 0);
-  words = words.filter(w => !removeWords.includes(w.toLowerCase()));
-  
-  if (words.length === 0) {
-    return query.replace(/\s+/g, ' ').trim();
-  }
-  
-  return words.join(' ').trim();
-}
-
-async function getAIResponse(userMessage, chatHistory, userName, userGender, senderID) {
-  const apiKey = getRandomApiKey();
-  if (!apiKey) {
-    return `Yaar ${userName}, API configure nahi hai, admin se bolo 😅`;
-  }
-  
-  const isOwnerUser = isOwner(senderID);
-  const persona = isOwnerUser ? getOwnerPersona() : getMuskanPersona(userName, userGender);
-  const displayName = isOwnerUser ? OWNER_NAME : userName;
-  
-  const messages = [
-    { role: "system", content: persona }
-  ];
-  
-  for (const msg of chatHistory.slice(-10)) {
-    messages.push({
-      role: msg.role,
-      content: msg.content
-    });
-  }
-  
-  const userPrompt = isOwnerUser 
-    ? `Tera OWNER aur CREATOR ${OWNER_NAME} ne kaha: "${userMessage}" - Tu uski har baat maanegi aur usse darti hai.`
-    : `${userName} ne kaha: "${userMessage}"`;
-  messages.push({ role: "user", content: userPrompt });
-  
-  try {
-    const response = await axios.post(
-      CEREBRAS_API_URL,
-      {
-        messages: messages,
-        model: "llama-3.3-70b",
-        max_completion_tokens: 150,
-        temperature: 0.9,
-        top_p: 0.95,
-        stream: false
-      },
-      {
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        timeout: 15000
-      }
-    );
-    
-    if (response.data?.choices?.[0]?.message?.content) {
-      let reply = response.data.choices[0].message.content.trim();
-      reply = reply.replace(/\bbhai\b/gi, 'yaar');
-      reply = reply.replace(/\bBhai\b/g, 'Yaar');
-      return reply;
-    }
-    
-    return `Kuch error ho gaya ${userName}, phir try karo 🙁`;
-  } catch (error) {
-    console.error('AI API Error:', error.message);
-    return `Abhi busy hoon ${userName}, thodi der baad baat karo 😅`;
-  }
-}
-
-async function executeCommand(commandName, args, context) {
-  const { api, event, config, client, Users, Threads, Currencies } = context;
-  const cmd = client.commands.get(commandName);
-  
-  if (!cmd) return false;
-  
-  try {
-    const Send = require('../../Data/utility/send');
-    const sendInstance = new Send(api, event);
-    
-    await cmd.run({
-      api,
-      event,
-      args,
-      send: sendInstance,
-      config,
-      client,
-      Users: Users || storedContext.Users,
-      Threads: Threads || storedContext.Threads,
-      Currencies: Currencies || storedContext.Currencies
-    });
-    return true;
-  } catch (err) {
-    console.error(`Error executing command ${commandName}:`, err.message);
-    return false;
-  }
-}
-
-async function handleAIChat(api, event, send, config, client, userMessage, userName, userGender, senderID, threadID, messageID) {
-  api.setMessageReaction("⏳", messageID, () => {}, true);
-  
-  let history = await getChatHistory(senderID);
-  
-  const aiResponse = await getAIResponse(userMessage, history, userName, userGender, senderID);
-  
-  history.push({ role: "user", content: `${userName}: ${userMessage}` });
-  history.push({ role: "assistant", content: aiResponse });
-  await saveChatHistory(senderID, history);
-  
-  api.setMessageReaction("✅", messageID, () => {}, true);
-  
-  const info = await api.sendMessage(aiResponse, threadID, messageID);
-  
-  if (client.replies && info?.messageID) {
-    client.replies.set(info.messageID, {
-      commandName: 'goibot',
-      author: senderID,
-      data: { userName, userGender, senderID }
-    });
-    
-    setTimeout(() => {
-      if (client.replies) client.replies.delete(info.messageID);
-    }, 300000);
-  }
-}
-
-loadUserData();
-
-module.exports = {
-  config: {
-    name: 'goibot',
-    aliases: ['bot', 'muskan'],
-    description: 'Muskan AI chatbot with smart command execution',
-    usage: 'muskan [message] or bot [message]',
-    category: 'Utility',
-    prefix: false
-  },
-  
-  async run({ api, event, send, config, client, Users, Threads, Currencies }) {
-    const { threadID, senderID, body, messageID } = event;
-    
-    if (!body) return;
-    
-    storedContext = { Users, Threads, Currencies };
-    
-    const lowerBody = body.toLowerCase().trim();
-    const isAdmin = config.ADMINBOT?.includes(senderID) || isOwner(senderID);
-    
-    const muskanMatch = body.match(/^muskan\s*/i);
-    const botMatch = body.match(/^bot\s*/i);
-    
-    if (!muskanMatch && !botMatch) return;
-    
-    let userMessage = '';
-    if (muskanMatch) {
-      userMessage = body.slice(muskanMatch[0].length).trim();
-    } else if (botMatch) {
-      userMessage = body.slice(botMatch[0].length).trim();
-    }
-    
-    const isOwnerUser = isOwner(senderID);
-    const userName = isOwnerUser ? OWNER_NAME : await getUserName(api, senderID);
-    const userGender = isOwnerUser ? 'boy' : await getUserGender(api, senderID, userName);
-    
-    if (!userMessage) {
-      let response;
-      if (isOwnerUser) {
-        response = ownerResponses[Math.floor(Math.random() * ownerResponses.length)];
-      } else {
-        response = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
-        response = response.replace(/\byaar\b/gi, userName);
-      }
-      const info = await send.reply(response);
-      
-      if (client.replies && info?.messageID) {
-        client.replies.set(info.messageID, {
-          commandName: 'goibot',
-          author: senderID,
-          data: { userName, userGender, senderID }
-        });
-        setTimeout(() => {
-          if (client.replies) client.replies.delete(info.messageID);
-        }, 300000);
-      }
-      return;
-    }
-    
-    const detectedCommand = detectCommand(userMessage, client, isAdmin);
-    
-    if (detectedCommand) {
-      const { command, args: cmdArgs, isAdminCmd } = detectedCommand;
-      
-      if (isAdminCmd && !isAdmin) {
-        return send.reply(`Yeh sirf admin kar sakta hai ${userName} 😅`);
-      }
-      
-      const success = await executeCommand(command, cmdArgs, {
-        api, event, config, client, Users, Threads, Currencies
-      });
-      
-      if (success) return;
-    }
-    
-    await handleAIChat(api, event, send, config, client, userMessage, userName, userGender, senderID, threadID, messageID);
-  },
-  
-  async handleReply({ api, event, send, config, client, Users, Threads, Currencies, data }) {
-    const { threadID, senderID, body, messageID } = event;
-    
-    if (!body) return;
-    
-    if (Users) storedContext.Users = Users;
-    if (Threads) storedContext.Threads = Threads;
-    if (Currencies) storedContext.Currencies = Currencies;
-    
-    const isOwnerUser = isOwner(senderID);
-    const isAdmin = config.ADMINBOT?.includes(senderID) || isOwnerUser;
-    const userName = isOwnerUser ? OWNER_NAME : (data?.userName || await getUserName(api, senderID));
-    const userGender = isOwnerUser ? 'boy' : (data?.userGender || await getUserGender(api, senderID, userName));
-    
-    const detectedCommand = detectCommand(body, client, isAdmin);
-    
-    if (detectedCommand) {
-      const { command, args: cmdArgs, isAdminCmd } = detectedCommand;
-      
-      if (isAdminCmd && !isAdmin) {
-        return send.reply(`Yeh sirf admin kar sakta hai ${userName} 😅`);
-      }
-      
-      const success = await executeCommand(command, cmdArgs, {
-        api, event, config, client, 
-        Users: Users || storedContext.Users, 
-        Threads: Threads || storedContext.Threads, 
-        Currencies: Currencies || storedContext.Currencies
-      });
-      
-      if (success) return;
-    }
-    
-    await handleAIChat(api, event, send, config, client, body, userName, userGender, senderID, threadID, messageID);
   }
 };
+
+module.exports.run = function({ api, event, client, __GLOBAL }) {};
